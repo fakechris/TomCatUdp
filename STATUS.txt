@@ -1,0 +1,153 @@
+================================================================================
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+================================================================================
+
+$Revision: 772875 $ $Date: 2009-05-08 09:48:28 +0200 (Fri, 08 May 2009) $
+
+                         =================================
+                         Apache Tomcat 6.0 Patch Proposals
+                         =================================
+
+
+RELEASE SHOWSTOPPERS:
+
+
+PATCHES ACCEPTED TO BACKPORT:
+  [ start all new proposals below, under PATCHES PROPOSED. ]
+
+PATCHES PROPOSED TO BACKPORT:
+  [ New proposals should be added at the end of the list ]
+
+* Fix issue where the first request for a deleted JSPs returns as if the JSP
+  still exists.
+  http://svn.apache.org/viewvc?view=rev&revision=683969
+  +1: markt, funkman
+   0: remm (looks risky, very minor problem), fhanik - minor problem
+  -1: 
+
+* Fix https://issues.apache.org/bugzilla/show_bug.cgi?id=45403
+  See commit message for details of negligable performance impact
+  http://svn.apache.org/viewvc?rev=701358&view=rev
+  +1: markt, funkman
+  -0: remm (I also do not think the patch is a good idea as a backport)
+  -0: fhanik - the bug talks about WEB-INF/lib and reload, that would be when reload="true" which should be considered development only
+      So to make this bug actually worth while fixing, and not impact performance, then it should only do this check on files that 
+      are relevant to the reload of an application, in other words a watched resource
+
+* Changes required to run with a security manager
+  http://svn.apache.org/viewvc?rev=721286&view=rev (original)
+  http://svn.apache.org/viewvc?rev=721704&view=rev (original)
+  http://svn.apache.org/viewvc?rev=721708&view=rev (original)
+  http://svn.apache.org/viewvc?rev=721886&view=rev (original)
+  http://svn.apache.org/viewvc?rev=746425&view=rev (to address Bill's concerns)
+  http://svn.apache.org/viewvc?rev=757335&view=rev (to remove the Catalina dep)
+  +1: markt, billbarker
+
+* Backport cleanup of semantics of thisAccessedTime and
+  lastAccessedTime for sessions:
+  - preparational whitespace changes
+    http://svn.apache.org/viewvc?rev=711695&view=rev
+  - Give thisAccessedTime and lastAccessedTime for sessions
+    a clear semantics:
+    http://svn.apache.org/viewvc?rev=711711&view=rev
+    - thisAccessedTime will be updated at the beginning and
+      at the end of session use
+    - lastAccessedTime will only be updated at the end of
+      session use
+    This means:
+    - lastAccessedTime is the last access time of a session
+      disregarding any request still being processed on.
+      So this is good to use even from within a request
+      to detect when its own session has been used last before.
+    - thisAccessedTime already gets updated when a new request 
+      disregarding any request still being processed on.
+      So this is better for any idleness check or information.
+    - thisAccessedTime >= lastAccessedTime always
+  - Port from StandardSession to DeltaSession
+    http://svn.apache.org/viewvc?rev=711714&view=rev
+  - Expose thisAccessedTime via the session interface
+    and ManagerBase, so we can use it from outside the session.
+    http://svn.apache.org/viewvc?rev=711716&view=rev
+  - Make the classes checking session idleness use thisAccessedTime.
+    http://svn.apache.org/viewvc?rev=711720&view=rev
+    This is not for invalidation, only for displaying
+    idle times and making persistance decisions.
+  +1: rjung, markt
+   0: billbarker: generally agree with remm that this is too big of a change for the stable branch
+                 but could agree to some of it if it was split into parts
+  -1: remm: no for TC 6.0
+
+* Fix https://issues.apache.org/bugzilla/show_bug.cgi?id=46908
+  http://svn.apache.org/viewvc?rev=758365&view=rev
+  Try and support java encoding names when using an xml parser provided via the
+  endorsed mechanism
+  +1: markt, remm
+  -1: 
+
+* Fix https://issues.apache.org/bugzilla/show_bug.cgi?id=46967
+  Better handling of errors when trying to use Manager.randomFile
+  Based on a patch by Kirk Wolf
+  Also make behaviour consistent when using a security manager
+  http://svn.apache.org/viewvc?rev=763228&view=rev
+  +1: markt, rjung
+  -1: 
+
+* Fix https://issues.apache.org/bugzilla/show_bug.cgi?id=46985
+  Clean up timeout handling
+  http://svn.apache.org/viewvc?rev=763262&view=rev
+  +1: markt, pero
+  -1: 
+
+* Fix https://issues.apache.org/bugzilla/show_bug.cgi?id=42390
+  Correct JSP compilation error with nested tagfile tags with variables with
+  "AT_BEGIN" scope
+  Patch provided by Konstantin Kolinko
+  http://svn.apache.org/viewvc?rev=763717&view=rev
+  +1: markt, remm (risky ...)
+  -1: 
+
+* Fix use of non-ASCII characters in property files
+  http://people.apache.org/~markt/patches/2009-04-20-native2ascii-de.patch (German)
+  http://people.apache.org/~markt/patches/2009-04-20-native2ascii-en.patch (English)
+  http://people.apache.org/~markt/patches/2009-04-20-native2ascii-es.patch (Spanish)
+  http://people.apache.org/~markt/patches/2009-04-20-native2ascii-fr.patch (French)
+  +1: markt
+  -1: 
+
+* Fix https://issues.apache.org/bugzilla/show_bug.cgi?id=47046
+  Deregister all MBeans when the server is stopped
+  http://svn.apache.org/viewvc?rev=769979&view=rev
+  +1: markt, pero
+  -1: 
+
+* Fix https://issues.apache.org/bugzilla/show_bug.cgi?id=47080
+  Prevent NPE when mapper makes no matches
+  http://svn.apache.org/viewvc?rev=770809&view=rev
+  +1: markt, pero
+  -1: 
+
+* Fix https://issues.apache.org/bugzilla/show_bug.cgi?id=47086
+  Include 64-bit windows binaries in distributions
+  Update Windows installer to work automatically on 64-bit machines
+  http://svn.apache.org/viewvc?view=rev&revision=770876
+  +1: markt, pero
+  -1:
+
+* Fix Close Stream at WebappClassLoader after read error
+  http://svn.apache.org/viewvc?rev=772872&view=rev 
+  +1: pero
+  -1:
+
