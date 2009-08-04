@@ -9,10 +9,14 @@ public abstract class RC4InputStream
 	extends InputStream implements Wrapper<InputStream> {
 
 	private boolean isEncrypted = false;
-    private int preRead[] = new int[3];
+	private int preRead[] = new int[3];
     private int pos = -1;
     private RC4 rc4;
-    
+
+    public boolean isEncrypted() {
+		return isEncrypted;
+	}
+
 	@Override
 	public int read() throws IOException {
 		initPos();

@@ -232,6 +232,10 @@ public class RC4 {
         return result;
     }
     
+    public void irc4(byte[] buf) {
+    	irc4(buf, 0, buf.length);
+    }
+    
     /** 
      * inplace RC4 encryption/decryption.
      *
